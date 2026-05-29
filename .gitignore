@@ -90,21 +90,33 @@ Desktop.ini
 venv/
 env/
 
-# Generated audio files (large binary + personal recordings)
+# -----------------------------------------------------------------------------
+# Runtime-generated files (recordings, reports, visualizations, etc.)
+# These are personal and/or large. We keep the directories via .gitkeep files.
+# -----------------------------------------------------------------------------
+
+# User practice recordings + auto-generated visualizations
+audio/user_recordings/
+!audio/user_recordings/.gitkeep
+
+# Generated evaluation reports
+reports/
+!reports/.gitkeep
+
+# Synthetic or downloaded reference audio (keep only if you explicitly want to commit one)
+# See negation example at the bottom of this file.
 audio/references/*.wav
 audio/references/*.flac
 audio/references/*.mp3
 audio/references/*.ogg
+audio/references/*.m4a
+audio/references/*.aac
 
-audio/user_recordings/*.wav
-audio/user_recordings/*.flac
-audio/user_recordings/*.mp3
-audio/user_recordings/*.ogg
-
-# Generated evaluation reports (JSON + exports)
-reports/*.json
-reports/*.html
-reports/*.pdf
+# Visualization images generated during practice sessions
+**/*_waveform.png
+**/*_pitch.png
+**/*_energy.png
+**/*_spectrogram.png
 
 # Local ML model caches (if someone downloads them inside the project)
 models/
