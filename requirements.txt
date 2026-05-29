@@ -1,6 +1,7 @@
 # SanskritMantraPronunciationCoach - Requirements
-# Python 3.9+
+# Python 3.10+
 # Note: On macOS, for pyaudio: brew install portaudio
+#       Recommended: Python 3.12 or 3.14 (Homebrew) for best performance with ML/audio libs.
 #       faster-whisper requires torch (CPU or CUDA). First run will download models (~1-3GB).
 
 # CLI & UI

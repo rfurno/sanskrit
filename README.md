@@ -73,10 +73,23 @@ sudo apt-get install portaudio19-dev python3-pyaudio
 
 ### 2. Python Environment
 
-```bash
-python -m venv .venv
-source .venv/bin/activate   # or conda, pyenv, etc.
+**Requirements:** Python 3.10 or newer (Python 3.12+ or 3.14 recommended).
 
+```bash
+# Recommended on macOS with Homebrew
+python3 -m venv .venv
+source .venv/bin/activate
+
+pip install -r requirements.txt
+```
+
+**Important after upgrading Python** (e.g. from 3.9 → 3.14):
+Old virtual environments are tied to the Python version they were created with and will break. Delete and recreate the venv:
+
+```bash
+rm -rf .venv
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -89,6 +102,34 @@ python -m main list-mantras
 ```
 
 The first time you practice, a **synthetic reference** will be auto-generated for Gayatri Mantra so you can immediately test the full pipeline.
+
+---
+
+## 🎵 Recommended Audio Formats
+
+For the most accurate pronunciation coaching results, audio format matters:
+
+| Format     | For Reference Files | For User Recordings | Notes |
+|------------|---------------------|---------------------|-------|
+| **WAV**    | ★★★★★ (Recommended) | ★★★★★ (Default)     | Lossless, precise timing. Best choice. |
+| **FLAC**   | ★★★★☆               | ★★★★☆               | Lossless + compressed. Excellent. |
+| **OGG**    | ★★☆☆☆               | ★★★☆☆               | Lossy. Usable but avoid for references. |
+| **MP3**    | ★☆☆☆☆               | ★★☆☆☆               | Lossy + variable quality. Not recommended. |
+| **MOV / MP4** | —                | —                   | Video containers. Supported only if **ffmpeg** is installed (audio is extracted automatically). |
+
+**Strong recommendation:**
+- Store your **reference mantras** as **WAV** or **FLAC**.
+- The app automatically warns you when you load lossy formats for evaluation.
+- Video files (`.mov`, `.mp4`, `.mkv`, etc.) are supported **if ffmpeg is installed**. The tool will extract the audio track on the fly.
+
+Install ffmpeg (highly recommended):
+```bash
+# macOS
+brew install ffmpeg
+
+# Ubuntu / Debian
+sudo apt install ffmpeg
+```
 
 ---
 

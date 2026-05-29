@@ -10,6 +10,7 @@
   "recommended_tempo_bpm": 52,
   "approximate_duration_seconds": 38,
   "reference_audio": "audio/references/gayatri_mantra.wav",
+  "_format_note": "WAV or FLAC is strongly recommended for reference files. The system will warn on lossy formats and can extract audio from video files (MOV/MP4) if ffmpeg is installed.",
   "phoneme_sequence": [
     ["oṃ", 1.8, true, true, "Long nasalized oṃ - the primordial sound"],
     ["bhūr", 1.0, false, false, "Aspirated bh + short ū + r"],

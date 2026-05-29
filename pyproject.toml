@@ -1,0 +1,61 @@
+[project]
+name = "sanskrit-mantra-pronunciation-coach"
+version = "1.0.0"
+description = "A tool for learning authentic Sanskrit mantra pronunciation with precise, multi-dimensional feedback."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "SanskritMantraPronunciationCoach"}
+]
+keywords = ["sanskrit", "mantra", "pronunciation", "speech", "audio", "prosody", "phonetics"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Education",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Multimedia :: Sound/Audio :: Analysis",
+    "Topic :: Education",
+]
+
+dependencies = [
+    "typer[all]>=0.9.0",
+    "rich>=13.0.0",
+    "pyyaml>=6.0",
+    "pyaudio>=0.2.13",
+    "soundfile>=0.12.1",
+    "librosa>=0.10.0",
+    "praat-parselmouth>=0.4.3",
+    "numpy>=1.24.0",
+    "scipy>=1.10.0",
+    "matplotlib>=3.7.0",
+    "faster-whisper>=1.0.0",
+    "jiwer>=3.0.0",
+    "rapidfuzz>=3.0.0",
+    "indic-transliteration>=2.3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.4",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourname/sanskrit-mantra-pronunciation-coach"
+Repository = "https://github.com/yourname/sanskrit-mantra-pronunciation-coach"
+
+[project.scripts]
+sanskrit-coach = "main:app"
+
+[tool.ruff]
+line-length = 100
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"

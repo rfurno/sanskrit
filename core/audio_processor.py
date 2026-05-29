@@ -2,7 +2,9 @@
 Core Audio Processing Module for SanskritMantraPronunciationCoach.
 
 Handles:
-- Loading and saving audio (WAV, FLAC, etc.)
+- Loading and saving audio (WAV, FLAC preferred; OGG/MP3 with caveats)
+- Robust support for extracting audio from video containers (MOV, MP4, MKV, etc.)
+  using ffmpeg when available
 - Microphone recording with real-time feedback
 - Playback
 - Feature extraction: MFCC, energy (RMS), pitch (Parselmouth), duration, voicing
@@ -10,10 +12,16 @@ Handles:
 - Synthetic reference generation for demo / bootstrapping
 """
 
+from __future__ import annotations
+
 import os
+import subprocess
+import tempfile
 import time
+import warnings
 import wave
 from pathlib import Path
+from shutil import which
 from typing import Dict, List, Optional, Tuple, Any
 
 import numpy as np
@@ -32,6 +40,94 @@ from config import AUDIO_CONFIG, REFERENCES_DIR, USER_RECORDINGS_DIR
 
 
 # =============================================================================
+# FORMAT DETECTION & FFMPEG SUPPORT
+# =============================================================================
+
+VIDEO_EXTENSIONS = {".mov", ".mp4", ".m4v", ".mkv", ".avi", ".webm", ".wmv", ".m4a"}
+LOSSY_AUDIO_EXTENSIONS = {".mp3", ".ogg", ".aac", ".wma"}
+
+
+def _has_ffmpeg() -> bool:
+    """Return True if ffmpeg is available on the system PATH."""
+    return which("ffmpeg") is not None
+
+
+def _is_video_file(path: Path) -> bool:
+    return path.suffix.lower() in VIDEO_EXTENSIONS
+
+
+def _is_lossy_audio(path: Path) -> bool:
+    return path.suffix.lower() in LOSSY_AUDIO_EXTENSIONS
+
+
+def extract_audio_from_video(
+    video_path: Path | str,
+    output_path: Optional[Path] = None,
+    sample_rate: Optional[int] = None,
+) -> Path:
+    """
+    Extract the audio track from a video file (MOV, MP4, MKV, AVI, etc.)
+    to a temporary WAV file using ffmpeg.
+
+    Returns the path to the extracted WAV file.
+
+    The caller is responsible for cleaning up the returned file if it was
+    created as a temporary.
+    """
+    video_path = Path(video_path).expanduser().resolve()
+    if not video_path.exists():
+        raise FileNotFoundError(f"Video file not found: {video_path}")
+
+    if not _has_ffmpeg():
+        raise RuntimeError(
+            "ffmpeg is not installed or not found in your system PATH.\n"
+            "Please install it to extract audio from video files:\n\n"
+            "  macOS:     brew install ffmpeg\n"
+            "  Ubuntu:    sudo apt install ffmpeg\n"
+            "  Windows:   https://ffmpeg.org/download.html\n"
+        )
+
+    if output_path is None:
+        fd, output_str = tempfile.mkstemp(suffix=".wav", prefix="sanskrit_extracted_")
+        os.close(fd)
+        output_path = Path(output_str)
+    else:
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    sr = sample_rate or AUDIO_CONFIG.sample_rate
+
+    cmd = [
+        "ffmpeg",
+        "-y",                    # Overwrite without asking
+        "-i", str(video_path),
+        "-vn",                   # Drop video stream
+        "-acodec", "pcm_s16le",  # Uncompressed 16-bit PCM
+        "-ar", str(sr),
+        "-ac", "1",              # Force mono (good for analysis)
+        str(output_path),
+    ]
+
+    try:
+        subprocess.run(
+            cmd,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=True,
+        )
+    except subprocess.CalledProcessError as e:
+        if output_path.exists():
+            output_path.unlink(missing_ok=True)
+        raise RuntimeError(
+            f"ffmpeg failed to extract audio from {video_path.name}.\n"
+            f"stderr:\n{e.stderr}"
+        ) from e
+
+    return output_path
+
+
+# =============================================================================
 # BASIC I/O
 # =============================================================================
 
@@ -39,14 +135,93 @@ def load_audio(
     path: Path | str,
     target_sr: Optional[int] = None,
     mono: bool = True,
+    allow_video_extraction: bool = True,
 ) -> Tuple[np.ndarray, int]:
     """
-    Load audio file. Returns (waveform, sample_rate).
-    Uses librosa for convenience (handles many formats + resampling).
+    Load an audio (or video) file and return (waveform, sample_rate).
+
+    This function provides much better diagnostics than raw librosa.load().
+
+    Features:
+    - Clear, actionable error messages when formats are unsupported.
+    - Automatic warning when loading lossy formats (.mp3, .ogg, etc.).
+    - Optional automatic extraction of audio from video containers
+      (MOV, MP4, MKV, AVI, etc.) when ffmpeg is available.
+
+    Args:
+        path: Path to audio or video file.
+        target_sr: Target sample rate (defaults to config value).
+        mono: Convert to mono.
+        allow_video_extraction: If True (default), attempt to extract audio
+            from video files using ffmpeg if the file looks like a video container.
+
+    Returns:
+        (waveform as float32, sample_rate)
     """
+    path = Path(path).expanduser().resolve()
+    if not path.exists():
+        raise FileNotFoundError(f"Audio/video file not found: {path}")
+
     target_sr = target_sr or AUDIO_CONFIG.sample_rate
-    y, sr = librosa.load(str(path), sr=target_sr, mono=mono)
-    return y.astype(np.float32), sr
+    ext = path.suffix.lower()
+
+    # Warn about lossy formats (especially important for reference files)
+    if _is_lossy_audio(path):
+        warnings.warn(
+            f"Loading lossy format '{ext}': {path.name}\n"
+            "For the most accurate pronunciation and prosody analysis, "
+            "strongly prefer lossless formats (WAV or FLAC) for reference recordings.",
+            UserWarning,
+            stacklevel=2,
+        )
+
+    # Handle video containers (MOV, MP4, MKV, etc.)
+    if _is_video_file(path):
+        if not allow_video_extraction:
+            raise ValueError(
+                f"'{path.name}' appears to be a video file ({ext}).\n"
+                "Set allow_video_extraction=True (default) to automatically "
+                "extract the audio track using ffmpeg."
+            )
+
+        if not _has_ffmpeg():
+            raise RuntimeError(
+                f"Cannot load video file '{path.name}' ({ext}).\n\n"
+                "ffmpeg is required to extract the audio track from video files.\n"
+                "Please install it:\n"
+                "  • macOS:   brew install ffmpeg\n"
+                "  • Ubuntu:  sudo apt install ffmpeg\n"
+                "  • Windows: Download from https://ffmpeg.org/download.html\n\n"
+                "After installing, re-run your command."
+            )
+
+        print(f"🎬 Extracting audio track from video file: {path.name}")
+        extracted_wav = extract_audio_from_video(path, sample_rate=target_sr)
+
+        try:
+            y, sr = librosa.load(str(extracted_wav), sr=target_sr, mono=mono)
+            return y.astype(np.float32), sr
+        finally:
+            # Clean up the temporary extracted file
+            if extracted_wav.exists() and "sanskrit_extracted_" in extracted_wav.name:
+                extracted_wav.unlink(missing_ok=True)
+
+    # Standard audio file loading path
+    try:
+        y, sr = librosa.load(str(path), sr=target_sr, mono=mono)
+        return y.astype(np.float32), sr
+    except Exception as e:
+        supported = "WAV, FLAC (best), OGG (Vorbis), AIFF"
+        error_msg = (
+            f"Failed to load audio file: {path}\n"
+            f"Detected extension: {ext}\n\n"
+            f"Error from backend: {e}\n\n"
+            f"Directly supported audio formats: {supported}\n"
+            f"MP3 support is unreliable and depends on your system libraries.\n\n"
+            f"Tip: For reference mantras, use WAV or FLAC for highest quality.\n"
+            f"For video files (MOV, MP4, etc.), install ffmpeg and try again."
+        )
+        raise RuntimeError(error_msg) from e
 
 
 def save_audio(
@@ -55,7 +230,12 @@ def save_audio(
     sr: int,
     subtype: str = "PCM_16",
 ) -> Path:
-    """Save audio array to disk. Creates parent dirs."""
+    """
+    Save audio array to disk using soundfile.
+
+    Supported output formats include WAV (default), FLAC, and OGG (Vorbis).
+    Video containers (MOV, MP4, etc.) are not supported for writing.
+    """
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     sf.write(str(path), y, sr, subtype=subtype)
