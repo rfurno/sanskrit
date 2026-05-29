@@ -101,6 +101,12 @@ pip install -r requirements.txt
 python -m main list-mantras
 ```
 
+You can also run the tool as a proper module:
+
+```bash
+python -m sanskrit_mantra_coach list-mantras
+```
+
 The first time you practice, a **synthetic reference** will be auto-generated for Gayatri Mantra so you can immediately test the full pipeline.
 
 ---
@@ -122,6 +128,21 @@ For the most accurate pronunciation coaching results, audio format matters:
 - The app automatically warns you when you load lossy formats for evaluation.
 - Video files (`.mov`, `.mp4`, `.mkv`, etc.) are supported **if ffmpeg is installed**. The tool will extract the audio track on the fly.
 
+#### Converting Audio Formats
+
+If you have a reference or recording in OGG (or another format) and want to convert it to WAV for better accuracy:
+
+```bash
+# Convert OGG to WAV (recommended settings)
+ffmpeg -i input.ogg -ar 22050 -ac 1 output.wav
+
+# Convert MP3 to WAV
+ffmpeg -i input.mp3 -ar 22050 -ac 1 output.wav
+
+# Extract audio from video (MOV/MP4) to WAV
+ffmpeg -i input.mov -vn -ar 22050 -ac 1 output.wav
+```
+
 Install ffmpeg (highly recommended):
 ```bash
 # macOS
@@ -140,24 +161,51 @@ sudo apt install ffmpeg
 python -m main list-mantras
 ```
 
-### Full Practice Session (Recommended)
+### Live Practice Session (Recommended for regular training)
 ```bash
 python -m main practice gayatri_mantra
 ```
 
-This will:
-1. Display the full Gayatri in Devanagari + IAST + meaning.
-2. Optionally play the reference.
-3. Prompt you to record (press Enter → Ctrl-C to stop).
-4. Run the full 8-dimension analysis.
-5. Show gorgeous rich feedback + Sanskrit phonetic tips.
-6. Generate 3 diagnostic plots (waveform / pitch / energy).
-7. Save a timestamped JSON report + your WAV.
+This performs a full live workflow:
+1. Shows the mantra (Devanagari + IAST + meaning).
+2. Optionally plays the reference.
+3. Records your voice live through the microphone.
+4. Runs the full 8-dimension analysis.
+5. Displays rich feedback with Sanskrit-specific tips.
+6. Generates diagnostic visualizations (waveform, pitch, energy).
+7. Saves a timestamped JSON report and your recording.
 
-### Evaluate an Existing Recording
+**Flags you may find useful:**
+- `--no-play-ref` — Skip playing the reference before recording.
+- `--no-visuals` — Skip generating the comparison plots.
+- `--seconds 30` — Limit maximum recording length.
+
+**Note:** The `practice` command always records from your microphone. Use `evaluate --audio` for pre-recorded files.
+
+### Analyze a Pre-Recorded File
+See the **"Evaluate a Pre-Recorded Audio File"** section above for detailed examples (including support for video files like MOV/MP4).
+
+If you omit the `--audio` flag, `evaluate` will automatically use your most recent recording for that mantra.
+
+### Evaluate a Pre-Recorded Audio File
+Use this when you already have a recording (from your phone, Zoom, another device, etc.):
+
 ```bash
-python -m main evaluate gayatri_mantra --audio audio/user_recordings/gayatri_mantra_user_....wav
+# Basic usage with a WAV file
+python -m main evaluate gayatri_mantra --audio audio/user_recordings/my_recording.wav
+
+# Play the reference before seeing the scores
+python -m main evaluate gayatri_mantra --audio audio/user_recordings/my_recording.wav --play-ref
+
+# Works with video files too (MOV, MP4, etc.) if ffmpeg is installed
+python -m main evaluate ganesha_name_1 --audio my_phone_recording.mov --play-ref
 ```
+
+This command:
+- Loads your pre-recorded file (supports WAV, FLAC, OGG, and video containers via ffmpeg)
+- Compares it against the reference
+- Generates the same rich feedback and scores
+- **Note**: Visualizations are only generated automatically during the `practice` command. For pre-recorded files, you can re-run analysis or manually generate plots if needed.
 
 ### Record a High-Quality Reference (Teachers / Advanced)
 ```bash
@@ -222,9 +270,12 @@ Visualizations (saved automatically) let you *see*:
 ## 🗂️ Adding a New Mantra
 
 1. Create `mantras/your_mantra.json` modeled exactly after `gayatri_mantra.json`.
-2. Record or generate a clean reference → place in `audio/references/your_mantra.wav` (or use `record-reference` command).
-3. (Optional) Provide a detailed `phoneme_sequence` with relative durations for better vowel-length scoring.
-4. Test with `practice your_mantra`.
+2. Add a high-quality reference recording:
+   - Place it in `audio/references/your_mantra.wav` (WAV or FLAC preferred).
+   - Or use the built-in command: `python -m main record-reference your_mantra`
+3. If your reference is in another format (OGG, MP3, etc.), convert it first (see "Converting Audio Formats" above).
+4. (Optional) Provide a detailed `phoneme_sequence` with relative durations for better vowel-length scoring.
+5. Test with `practice your_mantra` (for live recording) or `evaluate your_mantra --audio your_file.wav`.
 
 The more accurate and traditionally rendered your reference recording, the better the feedback quality.
 
@@ -236,6 +287,13 @@ The more accurate and traditionally rendered your reference recording, the bette
 - Synthetic references are useful for pipeline testing but **not** for serious practice. Always replace with a high-quality human recording (ideally from a qualified teacher).
 - Real forced alignment at the phoneme level would require a custom acoustic model trained on Sanskrit chanting. The current implementation uses DTW + heuristics — excellent for feedback, not perfect.
 - Works best with clear, close-mic recordings in a quiet space.
+
+### Common Issues & Fixes
+
+- **"pyaudio not found"** or recording fails → Install system dependency: `brew install portaudio` (macOS) or `sudo apt install portaudio19-dev` (Linux), then reinstall pyaudio.
+- **ffmpeg not found** when using MOV/MP4 or converting files → `brew install ffmpeg` (macOS) / `sudo apt install ffmpeg` (Linux).
+- **Reference sounds like noise/garbage** → You are likely playing a synthetic reference generated for a different mantra. Delete the unwanted `.wav` in `audio/references/` and ensure your real reference (OGG/WAV) is correctly referenced in the mantra's JSON file.
+- **Very low pronunciation scores with a good recording** → Try converting your reference to WAV/FLAC. Lossy formats (OGG, MP3) can degrade alignment quality.
 
 ---
 

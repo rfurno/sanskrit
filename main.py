@@ -8,7 +8,7 @@ Usage examples (run from the repository root):
     python -m main --help
     python -m main list-mantras
     python -m main practice gayatri_mantra
-    python -m main evaluate gayatri_mantra --audio path/to/recording.wav
+    python -m main evaluate gayatri_mantra --audio path/to/recording.wav --play-ref
 
 You can also run it as a module:
     python -m sanskrit_mantra_coach
