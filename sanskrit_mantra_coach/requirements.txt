@@ -1,0 +1,37 @@
+# SanskritMantraPronunciationCoach - Requirements
+# Python 3.9+
+# Note: On macOS, for pyaudio: brew install portaudio
+#       faster-whisper requires torch (CPU or CUDA). First run will download models (~1-3GB).
+
+# CLI & UI
+typer[all]>=0.9.0
+rich>=13.0.0
+
+# Config
+pyyaml>=6.0
+
+# Audio I/O and recording
+pyaudio>=0.2.13
+soundfile>=0.12.1
+librosa>=0.10.0
+
+# Prosody and pitch (critical for Sanskrit vowel length + tone)
+praat-parselmouth>=0.4.3
+
+# Numerical + scientific
+numpy>=1.24.0
+scipy>=1.10.0
+matplotlib>=3.7.0
+
+# ASR / Transcription (Sanskrit support is limited in base models; used optionally)
+faster-whisper>=1.0.0
+
+# Text similarity for romanized comparison
+jiwer>=3.0.0
+rapidfuzz>=3.0.0
+
+# Sanskrit / Indic text handling (excellent IAST romanization + script utils)
+indic-transliteration>=2.3.0
+
+# Optional but recommended for better phonemization / future
+# epitran>=1.24  # Alternative grapheme-to-phoneme; uncomment if needed for more languages
