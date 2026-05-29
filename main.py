@@ -4,11 +4,14 @@ SanskritMantraPronunciationCoach
 
 A sophisticated tool for learning authentic Sanskrit mantra pronunciation.
 
-Usage examples:
-    python -m sanskrit_mantra_coach.main --help
-    python -m sanskrit_mantra_coach.main list-mantras
-    python -m sanskrit_mantra_coach.main practice gayatri_mantra
-    python -m sanskrit_mantra_coach.main evaluate gayatri_mantra --audio path/to/recording.wav
+Usage examples (run from the repository root):
+    python -m main --help
+    python -m main list-mantras
+    python -m main practice gayatri_mantra
+    python -m main evaluate gayatri_mantra --audio path/to/recording.wav
+
+You can also run it as a module:
+    python -m sanskrit_mantra_coach
 """
 
 from __future__ import annotations

@@ -1,0 +1,130 @@
+# =============================================================================
+# Sanskrit Workspace - Root .gitignore
+# =============================================================================
+# This is the canonical .gitignore for the repository.
+# Place it at the git repo root (the folder containing .git/).
+
+# -----------------------------------------------------------------------------
+# Python
+# -----------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# -----------------------------------------------------------------------------
+# Virtual Environments (anywhere in the repo)
+# -----------------------------------------------------------------------------
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.conda/
+conda-meta/
+
+# -----------------------------------------------------------------------------
+# IDE / Editor
+# -----------------------------------------------------------------------------
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# -----------------------------------------------------------------------------
+# OS Generated Files
+# -----------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# -----------------------------------------------------------------------------
+# Logs, Cache & Temp
+# -----------------------------------------------------------------------------
+*.log
+*.tmp
+*.temp
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.ipynb_checkpoints/
+
+# -----------------------------------------------------------------------------
+# SanskritMantraPronunciationCoach specific ignores
+# These paths are relative to the repository root (everything is flat here now).
+# -----------------------------------------------------------------------------
+.env
+.venv/
+venv/
+env/
+
+# Generated audio files (large binary + personal recordings)
+audio/references/*.wav
+audio/references/*.flac
+audio/references/*.mp3
+audio/references/*.ogg
+
+audio/user_recordings/*.wav
+audio/user_recordings/*.flac
+audio/user_recordings/*.mp3
+audio/user_recordings/*.ogg
+
+# Generated evaluation reports (JSON + exports)
+reports/*.json
+reports/*.html
+reports/*.pdf
+
+# Local ML model caches (if someone downloads them inside the project)
+models/
+whisper_models/
+*.bin
+*.pt
+
+# Debug / temporary folders
+debug/
+tmp/
+temp/
+
+# Internal task file (not part of the public project)
+project-instructions.md
+
+# Leftover directory from previous layout (safe to ignore)
+sanskrit_mantra_coach/
+
+# -----------------------------------------------------------------------------
+# Optional: Force-include a specific high-quality reference recording
+# -----------------------------------------------------------------------------
+# If you later want to commit one canonical reference audio file, uncomment:
+# !audio/references/gayatri_mantra.wav

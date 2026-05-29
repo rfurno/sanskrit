@@ -22,6 +22,7 @@ from rapidfuzz import fuzz
 
 from config import (
     MANTRAS_DIR,
+    PROJECT_ROOT,
     SANSKRIT_VOWELS,
     SANSKRIT_CONSONANTS,
     GAYATRI_PHONEME_SEQUENCE,
@@ -199,7 +200,7 @@ def load_mantra(mantra_id: str) -> MantraData:
 
     ref_audio = Path(data.get("reference_audio", f"audio/references/{mantra_id}.wav"))
     if not ref_audio.is_absolute():
-        ref_audio = (MANTRAS_DIR.parent / ref_audio).resolve()
+        ref_audio = (PROJECT_ROOT / ref_audio).resolve()
 
     return MantraData(
         id=data["id"],

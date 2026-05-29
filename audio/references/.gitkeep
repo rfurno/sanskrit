@@ -1,0 +1,3 @@
+# Keep this directory in version control.
+# Actual .wav / .flac reference files are ignored by .gitignore.
+# Place high-quality canonical reference recordings here (e.g. gayatri_mantra.wav).
