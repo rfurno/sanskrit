@@ -439,12 +439,17 @@ def evaluate_recitation(
 
     if not ref_path.exists():
         from core.audio_processor import ensure_reference_audio
-        ref_path = ensure_reference_audio(mantra_id)
+        fallback = ensure_reference_audio(mantra_id)
+        if fallback is not None:
+            ref_path = fallback
 
     if play_reference:
-        print("🔊 Playing reference...")
-        ref_y, ref_sr = load_audio(ref_path)
-        play_audio(ref_y, ref_sr)
+        if ref_path and ref_path.exists():
+            print("🔊 Playing reference...")
+            ref_y, ref_sr = load_audio(ref_path)
+            play_audio(ref_y, ref_sr)
+        else:
+            print("[yellow]No reference audio available to play.[/yellow]")
 
     # Align
     alignment = align_reference_and_user(ref_path, user_audio, user_sr)

@@ -84,7 +84,7 @@ class AlignmentResult:
     ref_mfcc: np.ndarray
     user_mfcc: np.ndarray
     dtw_distance: float
-    alignment_path: np.ndarray  # (N, 2) indices into ref and user
+    alignment_path: np.ndarray  # (L, 2) indices into ref and user sequences (from DTW)
     ref_duration: float
     user_duration: float
     ref_features: Dict[str, Any]
@@ -415,7 +415,16 @@ def estimate_phoneme_alignment_quality(
     # Sample energy at corresponding frames along path
     ref_energy_along = []
     user_energy_along = []
-    for r_idx, u_idx in path:
+
+    # Ensure we iterate over pairs even if shape is unexpected
+    path = np.asarray(path)
+    if path.ndim == 2 and path.shape[1] >= 2:
+        path = path[:, :2]  # take first two columns if more
+
+    for pair in path:
+        if len(pair) < 2:
+            continue
+        r_idx, u_idx = int(pair[0]), int(pair[1])
         if r_idx < len(ref_rms) and u_idx < len(user_rms):
             ref_energy_along.append(ref_rms[r_idx])
             user_energy_along.append(user_rms[u_idx])

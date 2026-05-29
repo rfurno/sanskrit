@@ -14,6 +14,7 @@ Handles:
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import tempfile
@@ -391,22 +392,25 @@ def compute_dtw_distance(
 ) -> Tuple[float, np.ndarray]:
     """
     Compute DTW distance between two feature sequences (e.g. MFCCs).
-    Returns (normalized_distance, alignment_path).
-    Lower is more similar. Normalization helps compare different lengths.
+    Returns (normalized_distance, alignment_path) where alignment_path has shape (L, 2).
     """
-    # librosa.dtw returns distance matrix + path (as list of arrays)
-    D, wp = librosa.sequence.dtw(seq1.T, seq2.T, metric=metric)  # wp shape (2, steps)
+    D, wp = librosa.sequence.dtw(seq1.T, seq2.T, metric=metric)
     raw_dist = D[-1, -1]
 
-    # Normalize by path length and by average sequence "energy"
-    path_len = wp.shape[1]
+    # librosa 0.10+ returns wp with shape (L, 2) already in many cases.
+    # Older versions returned (2, L). Normalize to always (L, 2).
+    if wp.ndim == 2 and wp.shape[0] == 2 and wp.shape[1] != 2:
+        wp = wp.T
+    # If it's already (L, 2) or (L, 2) after above, good.
+
+    path_len = wp.shape[0] if wp.ndim == 2 else len(wp)
     norm_dist = raw_dist / max(path_len, 1)
 
-    # Further scale by sequence lengths to penalize extreme speed diffs
+    # Penalize large length differences
     len_penalty = abs(len(seq1) - len(seq2)) / max(len(seq1) + len(seq2), 1)
     final = norm_dist * (1.0 + 0.6 * len_penalty)
 
-    return float(final), wp.T  # (N, 2) path
+    return float(final), wp  # guaranteed (L, 2)
 
 
 # =============================================================================
@@ -617,27 +621,50 @@ def generate_synthetic_gayatri_reference(
     return y.astype(np.float32)
 
 
-def ensure_reference_audio(mantra_id: str = "gayatri_mantra") -> Path:
+def ensure_reference_audio(mantra_id: str) -> Optional[Path]:
     """
-    Ensure a reference audio file exists for the given mantra.
-    If the configured file is missing, generate a synthetic one (with warning).
-    Returns the path to the reference audio.
-    """
-    from config import MANTRAS_DIR, REFERENCES_DIR
+    Return the path to the reference audio for this mantra, as declared
+    in its JSON file (mantras/<id>.json → "reference_audio").
 
-    ref_path = REFERENCES_DIR / f"{mantra_id}.wav"
+    - If the declared file exists → return its path.
+    - If it does not exist:
+        - For "gayatri_mantra": generate the built-in synthetic reference (demo only).
+        - For any other mantra: print a clear warning and return None.
+          The caller is responsible for handling the missing reference.
+    """
+    from config import MANTRAS_DIR, PROJECT_ROOT
+
+    mantra_json = MANTRAS_DIR / f"{mantra_id}.json"
+    if not mantra_json.exists():
+        raise FileNotFoundError(f"No mantra definition found: {mantra_json}")
+
+    with open(mantra_json, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    declared = data.get("reference_audio")
+    if not declared:
+        # Very old mantra definitions without the field
+        declared = f"audio/references/{mantra_id}.wav"
+
+    ref_path = (PROJECT_ROOT / declared).resolve()
 
     if ref_path.exists():
         return ref_path
 
-    print(f"⚠️  Reference audio not found at {ref_path}")
-    print("   Generating synthetic reference for demo purposes...")
-    print("   → For accurate evaluation, replace with a real high-quality recording.\n")
+    # File is missing → fallback behavior
+    if mantra_id == "gayatri_mantra":
+        print(f"⚠️  Reference audio not found at {ref_path}")
+        print("   Generating synthetic reference for demo purposes...")
+        print("   → For accurate evaluation, replace with a real high-quality recording.\n")
 
-    y = generate_synthetic_gayatri_reference()
-    save_audio(ref_path, y, AUDIO_CONFIG.sample_rate)
-    print(f"   ✓ Synthetic reference saved to {ref_path}\n")
-    return ref_path
+        y = generate_synthetic_gayatri_reference()
+        save_audio(ref_path, y, AUDIO_CONFIG.sample_rate)
+        print(f"   ✓ Synthetic reference saved to {ref_path}\n")
+        return ref_path
+    else:
+        print(f"⚠️  Reference audio not found: {ref_path}")
+        print("   Please add a real recording (recommended: WAV or FLAC) at that location.\n")
+        return None
 
 
 # =============================================================================

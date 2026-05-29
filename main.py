@@ -103,6 +103,9 @@ def _transcribe(y: "np.ndarray", sr: int, model) -> Optional[str]:
 
 def _maybe_play_reference(mantra_id: str) -> None:
     ref_path = ensure_reference_audio(mantra_id)
+    if ref_path is None:
+        rprint("[yellow]No reference audio available for this mantra yet.[/yellow]")
+        return
     if Confirm.ask("🔊 Play reference recording now?", default=True):
         y, sr = load_audio(ref_path)
         play_audio(y, sr)
@@ -151,7 +154,15 @@ def practice(
 
     print_mantra_card(mantra.raw_json)
 
-    ref_path = ensure_reference_audio(mantra_id)
+    # Get the authoritative reference path from the mantra definition
+    ref_path = mantra.reference_audio_path
+
+    # If the declared reference doesn't exist, try to ensure one (synthetic for Gayatri, warning otherwise)
+    if not ref_path.exists():
+        from core.audio_processor import ensure_reference_audio
+        ensured = ensure_reference_audio(mantra_id)
+        if ensured is not None:
+            ref_path = ensured
 
     if play_ref:
         _maybe_play_reference(mantra_id)
@@ -198,12 +209,15 @@ def practice(
 
     # Visualizations
     if save_visuals:
-        rprint("\n[bold]📈 Generating diagnostic visualizations...[/bold]")
-        plots = generate_all_visualizations(
-            ref_path, user_y, user_sr, user_path, mantra.name
-        )
-        for name, p in plots.items():
-            rprint(f"   • {name}: [cyan]{p}[/cyan]")
+        if ref_path and ref_path.exists():
+            rprint("\n[bold]📈 Generating diagnostic visualizations...[/bold]")
+            plots = generate_all_visualizations(
+                ref_path, user_y, user_sr, user_path, mantra.name
+            )
+            for name, p in plots.items():
+                rprint(f"   • {name}: [cyan]{p}[/cyan]")
+        else:
+            rprint("[yellow]Skipping visualizations — no reference audio available.[/yellow]")
 
     # Report
     report_path = result.save_report()

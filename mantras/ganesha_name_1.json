@@ -1,0 +1,21 @@
+{
+  "id": "ganesha_name_1",
+  "name": "Ganesha",
+  "devanagari": "ॐ गजाननाय नमः",
+  "iast": "",
+  "transliteration_simple": "",
+  "english_translation": "",
+  "meaning_summary": "",
+  "meter": "",
+  "reference_audio": "audio/references/ganesha_name_1.wav",
+  "_format_note": "WAV or FLAC is strongly recommended for reference files. The system will warn on lossy formats and can extract audio from video files (MOV/MP4) if ffmpeg is installed.",
+  "phoneme_sequence": [
+  ],
+  "sanskrit_specific_guidance": [
+    
+  ],
+  "common_mistakes": [
+
+  ],
+  "tags": ["vedic", "ganesha", "most_popular"]
+}
